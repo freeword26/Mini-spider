@@ -1,0 +1,49 @@
+{
+  "project_id": "PRJ_SPIDER_MAX_001",
+  "project_name": "Spider Max",
+  "tags": {
+    "project_type": "spider-core",
+    "domain": ["fullstack", "project-management", "agent-system"],
+    "layer": "cross-cutting",
+    "status": "已上线",
+    "priority": "P0",
+    "risk_level": "risk-low",
+    "zone": "zone-blue",
+    "executor_type": "hybrid",
+    "spider_family": "max"
+  },
+  "spider_info": {
+    "family": "max",
+    "role": "全栈项目管理与多Agent协同平台",
+    "version": "3.0.0",
+    "port": 8041,
+    "modules_count": 47,
+    "api_endpoints": "200+",
+    "db_tables": 23
+  },
+  "progress": {
+    "progress_pct": 100,
+    "milestone_current": "已上线",
+    "milestone_total": 5,
+    "milestone_done": 5,
+    "health_score": 92.0,
+    "blocked_count": 0,
+    "days_remaining": 0,
+    "milestones": [
+      {"name": "核心架构", "date": "2026-05-20", "status": "done"},
+      {"name": "服务模块", "date": "2026-05-22", "status": "done"},
+      {"name": "API接口", "date": "2026-05-24", "status": "done"},
+      {"name": "数据迁移", "date": "2026-05-26", "status": "done"},
+      {"name": "上线发布", "date": "2026-05-27", "status": "done"}
+    ]
+  },
+  "metadata": {
+    "version": "3.0.0",
+    "created_at": "2026-05-20T00:00:00+08:00",
+    "updated_at": "2026-05-28T00:00:00+08:00",
+    "owner": "系统经理",
+    "status": "已上线",
+    "description": "Spider Max (大蜘蛛) — 全栈项目管理与多Agent智能体协同平台，47个服务模块，200+ API接口，23个数据库表"
+  },
+  "dependencies": []
+}
