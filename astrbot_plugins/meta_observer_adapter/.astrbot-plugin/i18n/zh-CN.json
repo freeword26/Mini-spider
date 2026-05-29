@@ -1,0 +1,9 @@
+{
+  "name": "meta_observer_adapter",
+  "description": "适配 meta_observer 的 AstrBot 插件，支持事件驱动的技术债管理",
+  "commands": {
+    "list_pending_events": "查看待处理事件",
+    "process_event": "处理事件",
+    "send_test_notification": "发送测试通知"
+  }
+}

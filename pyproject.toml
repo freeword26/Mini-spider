@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spider-max"
+version = "3.0.0"
+description = "Spider Max (大蜘蛛) — 全栈项目管理与多Agent智能体协同平台"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "TAPD System Team"},
+]
+keywords = ["项目管理", "Agent协同", "OKR", "DAG", "DevOps", "数据分析"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Project Management",
+]
+
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "python-dotenv>=1.0.0",
+    "sqlalchemy>=2.0.0",
+    "httpx>=0.26.0",
+    "aio-pika>=9.3.0",
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    "psutil>=5.9.0",
+    "prometheus-client>=0.19.0",
+    "jinja2>=3.1.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+full = [
+    "chromadb>=0.4.0",
+    "sentence-transformers>=2.2.0",
+    "neo4j>=5.14.0",
+    "networkx>=3.2.0",
+    "apscheduler>=3.10.0",
+    "aiosmtplib>=2.0.0",
+    "pika>=1.3.0",
+    "asyncpg>=0.29.0",
+    "aiofiles>=23.0.0",
+    "graphviz>=0.20.0",
+]
+
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.3.0",
+    "mypy>=1.8.0",
+]
+
+[project.scripts]
+spider = "spider_max.cli.main:cli"
+
+[tool.setuptools.packages.find]
+include = ["spider_max", "spider_max.*"]

@@ -1,0 +1,19 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include SECURITY.md
+include pyproject.toml
+recursive-include spider_max *.py
+recursive-include spider_max *.sql
+recursive-include spider_max *.md
+recursive-include spider_max *.yaml
+exclude spider_max/__pycache__
+exclude spider_max/**/__pycache__
+exclude spider_max/**/*.pyc
+exclude spider_max.egg-info
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude *.env
+global-exclude *.db

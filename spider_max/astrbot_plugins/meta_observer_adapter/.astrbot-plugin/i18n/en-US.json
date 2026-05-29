@@ -1,0 +1,9 @@
+{
+  "name": "meta_observer_adapter",
+  "description": "AstrBot plugin for meta_observer integration, event-driven technical debt management",
+  "commands": {
+    "list_pending_events": "List pending events",
+    "process_event": "Process event",
+    "send_test_notification": "Send test notification"
+  }
+}

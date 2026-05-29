@@ -1,0 +1,60 @@
+﻿# docker-compose.unattended.yml - 无人值守部署
+version: '3.8'
+
+services:
+  # RabbitMQ 事件总线
+  rabbitmq-event-bus:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-event-bus
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - unattended-net
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # 无人值守调度中心
+  unattended-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: unattended-scheduler
+    restart: unless-stopped
+    ports:
+      - "5005:5005"
+    environment:
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://rabbitmq-event-bus:5672/}
+      - EVENT_BUS_MODE=rabbitmq
+      - TZ=Asia/Shanghai
+      - SCHEDULE_ENABLED=true
+      - LOW_TOKEN_MODE=true
+    volumes:
+      - .:/app
+    depends_on:
+      rabbitmq-event-bus:
+        condition: service_healthy
+    networks:
+      - unattended-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+networks:
+  unattended-net:
+    driver: bridge
+
+volumes:
+  rabbitmq-data:
+
