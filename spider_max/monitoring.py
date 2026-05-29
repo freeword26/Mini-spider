@@ -10,7 +10,7 @@ import asyncio
 import logging
 import time
 from datetime import datetime, date, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field
 from collections import defaultdict
 

@@ -1,60 +1,94 @@
-﻿# docker-compose.unattended.yml - 无人值守部署
+﻿# docker-compose.yml — Spider MAX v3.0.0 部署配置
+# 用法: docker-compose up -d
 version: '3.8'
 
 services:
-  # RabbitMQ 事件总线
-  rabbitmq-event-bus:
-    image: rabbitmq:3-management
-    container_name: rabbitmq-event-bus
+
+  # ─── RabbitMQ 事件总线 ───────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: spider-rabbitmq
     restart: unless-stopped
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"     # AMQP 端口
+      - "15672:15672"   # 管理面板 http://localhost:15672
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-admin123}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
-      - unattended-net
+      - spider-net
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
-      interval: 30s
+      interval: 15s
       timeout: 10s
       retries: 5
 
-  # 无人值守调度中心
-  unattended-scheduler:
+  # ─── Spider MAX 主服务 ───────────────────────────────
+  spider-max:
     build:
-      context: .
+      context: ../..
       dockerfile: Dockerfile
-    container_name: unattended-scheduler
+    container_name: spider-max
+    restart: unless-stopped
+    ports:
+      - "8041:8041"     # FastAPI 主端口
+    environment:
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin123}@rabbitmq:5672/
+      - EVENT_BUS_MODE=rabbitmq
+      - TZ=Asia/Shanghai
+      - LOG_LEVEL=info
+    volumes:
+      - spider-data:/app/data
+      - spider-logs:/app/logs
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - spider-net
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8041/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── 无人值守调度器 (端口5005) ───────────────────────
+  spider-scheduler:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: spider-scheduler
     restart: unless-stopped
     ports:
       - "5005:5005"
     environment:
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://rabbitmq-event-bus:5672/}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin123}@rabbitmq:5672/
       - EVENT_BUS_MODE=rabbitmq
       - TZ=Asia/Shanghai
       - SCHEDULE_ENABLED=true
-      - LOW_TOKEN_MODE=true
     volumes:
-      - .:/app
+      - spider-data:/app/data
+      - spider-logs:/app/logs
     depends_on:
-      rabbitmq-event-bus:
+      rabbitmq:
         condition: service_healthy
+      spider-max:
+        condition: service_started
     networks:
-      - unattended-net
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
+      - spider-net
+    command: ["python", "-m", "uvicorn", "spider_max.main:app", "--host", "0.0.0.0", "--port", "5005"]
 
 networks:
-  unattended-net:
+  spider-net:
     driver: bridge
 
 volumes:
   rabbitmq-data:
-
+  spider-data:
+  spider-logs:
