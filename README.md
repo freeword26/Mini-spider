@@ -1,268 +1,192 @@
-﻿# Spider MAX (大蜘蛛) v3.0.0
+# Spider MAX (大蜘蛛) v3.0.0
 
 全栈项目管理与多Agent协同平台
 
-## 一句话说明
+## 定位
 
-Spider MAX 是一个**自动化项目管理引擎** — 你把项目和工作流定义好，它自动调度执行、监控健康、故障自愈，7×24小时无人值守跑完整个项目生命周期。
+Spider MAX 是**项目立项后的全栈管理工具**。项目已经确认立项，进入执行阶段后，用它来做：
+
+- **多Agent协同** — 多个智能体分工合作，自动推进项目
+- **OKR拆解追踪** — 目标分解到关键结果，实时监控进度
+- **DAG任务调度** — 有依赖关系的任务自动按拓扑序执行
+- **数据分析仪表板** — 项目进度、健康度、完成率一目了然
+- **无人值守运行** — 24×7自动调度、故障自愈、异常告警
+
+它不是项目立项工具，而是**立项后的执行引擎**。
 
 ---
 
-## 核心概念
+## 快速启动
 
-### 工作流 (Workflow)
-
-由多个**任务(Task)** 组成的自动化流程。每个任务有执行者(Agent)、依赖关系、超时和重试策略。
+### Windows — 双击运行
 
 ```
-示例：每日运维检查工作流
-  → 检查系统状态 → 检查磁盘 → 检查内存 → 检查进程 → 检查项目 → 生成报告
+spider_max.bat
 ```
 
-### 编排模式 (Collaboration Mode)
+自动检查 Python 环境、安装依赖、显示 CLI 帮助。
 
-5种工作流执行策略：
+### 命令行
 
-| 模式 | 说明 | 适用场景 |
+```bash
+# 安装依赖 + 可编辑安装
+pip install -e .
+
+# 启动 API 服务（默认端口 8041）
+spider serve
+
+# 或直接
+python run.py
+```
+
+启动后访问 `http://localhost:8041/docs` 查看完整 API 文档。
+
+---
+
+## CLI 命令
+
+```bash
+spider version              # 版本信息
+spider serve --port 8041    # 启动 API 服务
+spider db_init              # 初始化数据库
+spider dashboard            # 命令行仪表板（项目数/任务数/完成率）
+spider list_modules         # 列出所有已注册的服务模块
+spider module <name> info   # 查看模块详情
+spider module <name> call --method=<func> --args='{}'  # 调用模块
+spider sync                 # 全量数据同步
+```
+
+---
+
+## 核心模块一览
+
+| 模块 | 文件 | 作用 |
 |---|---|---|
-| **DAG** | 有向无环图，按依赖关系并行执行 | 有依赖关系的任务链 |
-| **PMO** | 项目经理主导，顺序执行 | 需要逐步确认的审批流 |
-| **SOP** | 标准操作流程，严格按步骤 | 不可跳过的标准操作 |
-| **Blackboard** | 共享黑板，多Agent协同贡献 | 多角色协作的头脑风暴 |
-| **Meta** | 元认知反思，执行前先思考 | 需要智能决策的复杂任务 |
+| **API服务** | `api/server.py` | FastAPI，统一入口，端口8041 |
+| **编排调度器** | `orchestrator.py` | 5种协作模式：DAG/PMO/SOP/Blackboard/Meta |
+| **工作流引擎** | `workflow_executor.py` | DAG执行、自动重试、熔断器 |
+| **调度中心** | `scheduler.py` | Cron/Interval/Event 定时调度 |
+| **事件总线** | `event_bus.py` | Agent间通信，支持内存和RabbitMQ |
+| **模块注册** | `core/registry.py` | 44个服务模块自动发现与注册 |
+| **插件管理** | `core/plugin_manager.py` | 插件安装/启动/停止/卸载 |
+| **监控告警** | `monitoring.py` | 指标采集、阈值告警、日报周报 |
+| **自愈引擎** | `self_healing.py` | 自动重启失败工作流、重新分配任务 |
+| **验证器** | `unattended_validator.py` | 24×7可用性验证、六大冲突检测 |
+| **报告生成** | `report_generator.py` | 自动生成项目报告 |
+| **权限认证** | `auth_gateway.py` | 用户授权、权限边界 |
+| **数据库** | `db/` | SQLite+SQLAlchemy，连接池 |
+| **配置** | `config.py` | 系统/服务器/工作流/告警配置 |
 
-### 触发器 (Trigger)
+---
 
-工作流的启动时机：
+## 内置工作流（14个）
 
-| 类型 | 说明 |
-|---|---|
-| **Cron** | 定时触发，如每天8点 `"0 8 * * *"` |
-| **Interval** | 间隔触发，如每3600秒 |
-| **OneTime** | 一次性触发，指定时间点手动 |
-| **Event** | 事件触发，订阅某个消息主题 |
-| **Manual** | 手动触发 |
+| 工作流 | 触发 | 说明 |
+|---|---|---|
+| `wf_daily_ops` | Cron每日 | 每日运维巡检+报告 |
+| `wf_001_data_sync` | Cron/Interval | 全量数据同步 |
+| `wf_002_task_tracking` | Cron | 任务进度跟踪 |
+| `wf_003_overdue_alert` | Cron | 逾期告警 |
+| `wf_004_cicd` | Event | CI/CD流水线 |
+| `wf_005_compliance` | Cron每日 | 合规审计 |
+| `wf_006_backup` | Cron每日 | 数据备份 |
+| `wf_007_git_sync` | Cron | Git仓库同步 |
+| `wf_008_log_analysis` | Cron | 日志分析 |
+| `wf_011_doc_slice` | Cron | 文档切片 |
+| `wf_012_ctx_track` | Event | 上下文跟踪 |
+| `wf_013_agent_collect` | Cron | Agent信息采集 |
+| `wf_014_doc_archive` | Cron每日 | 文档归档 |
+| `wf_lifecycle_scan` | Cron | 项目生命周期扫描 |
+| `wf_okr_report` | Cron每日 | OKR进度报告 |
 
-### 熔断器 (Circuit Breaker)
+---
 
-防止故障扩散的保护机制：
-- **Closed(关闭)** — 正常运行，记录失败次数
-- **Open(打开)** — 失败达到阈值，暂停执行，熔断所有请求
-- **Half-Open(半开)** — 超时后尝试恢复，成功则关闭，失败则重新打开
+## API 接口
 
-### 事件总线 (EventBus)
-
-Agent之间的通信通道，支持：
-- **发布/订阅** — Agent 发布消息，订阅者自动收到
-- **死信队列** — 处理失败的消息保存到死信队列
-- **RabbitMQ** — 可选的消息队列后端
-- **请求-回复** — 发送消息并等待回复
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/` | 服务状态 |
+| GET | `/docs` | Swagger 文档 |
+| GET | `/api/v1/health` | 健康检查 |
+| GET | `/api/v1/dashboard` | 项目仪表板 |
+| GET | `/api/v1/modules` | 模块列表 |
+| GET | `/api/v1/modules/{name}` | 模块详情 |
+| POST | `/api/v1/modules/{name}/load` | 加载模块 |
+| GET | `/api/v1/workflows` | 工作流列表 |
+| POST | `/api/v1/workflows` | 创建工作流 |
+| POST | `/api/v1/workflows/{id}/execute` | 执行工作流 |
+| GET | `/api/v1/executions/{id}` | 执行记录 |
+| GET | `/api/v1/schedules` | 定时任务列表 |
+| GET | `/api/v1/agents` | Agent列表 |
+| POST | `/api/v1/permissions/check` | 权限检查 |
+| POST | `/api/v1/permissions/grant` | 授权 |
 
 ---
 
 ## 项目结构
 
 ```
-spider_max/                          # 项目根目录
-├── spider_max/                      # Python 主包
-│   ├── api/                         # FastAPI API路由
-│   │   ├── server.py               # FastAPI应用入口
-│   │   ├── health.py               # 健康检查 /health
-│   │   ├── dashboard.py            # 仪表板数据 /api/v1/dashboard
-│   │   ├── modules.py              # 模块管理 /api/v1/modules
-│   │   ├── permissions.py          # 权限管理 /api/v1/permissions
-│   │   ├── agents.py               # Agent管理 /api/v1/agents
-│   │   ├── workflows.py            # 工作流API /api/v1/workflows
-│   │   ├── executions.py           # 执行记录 /api/v1/executions
-│   │   ├── schedules.py            # 定时任务 /api/v1/schedules
-│   │   └── store.py                # 数据查询 /api/v1/store
-│   ├── cli/                         # 命令行接口
-│   │   ├── __init__.py             # CLI命令定义
-│   │   └── main.py                 # CLI入口
-│   ├── core/                        # 核心框架
-│   │   ├── registry.py             # 模块注册 (44个服务模块)
-│   │   └── plugin_manager.py       # 插件管理
-│   ├── agents/                      # Agent管理
-│   │   ├── registry.py             # Agent注册表
-│   │   └── schedules/              # Agent排班调度
-│   ├── workflows/                   # 内置工作流 (14个)
-│   │   ├── wf_001_data_sync.py     # 数据同步
-│   │   ├── wf_002_task_tracking.py # 任务跟踪
-│   │   ├── wf_003_overdue_alert.py # 逾期告警
-│   │   ├── wf_004_cicd.py          # CI/CD
-│   │   ├── wf_005_compliance.py    # 合规审计
-│   │   ├── wf_006_backup.py        # 备份
-│   │   ├── wf_007_git_sync.py      # Git同步
-│   │   ├── wf_008_log_analysis.py  # 日志分析
-│   │   ├── wf_011_doc_slice.py     # 文档切片
-│   │   ├── wf_012_ctx_track.py     # 上下文跟踪
-│   │   ├── wf_013_agent_collect.py # Agent采集
-│   │   ├── wf_014_doc_archive.py   # 文档归档
-│   │   ├── wf_daily_ops.py         # 每日运维 (核心)
-│   │   ├── wf_lifecycle_scan.py    # 生命周期扫描
-│   │   └── wf_okr_report.py        # OKR报告
-│   ├── tests/                       # 单元测试 (67个用例)
-│   ├── models.py                    # 数据模型 (Workflow/Task/Execution)
-│   ├── orchestrator.py              # 编排调度器 (5种协作模式)
-│   ├── scheduler.py                 # 工作流调度中心 (Cron/Interval/Event)
-│   ├── event_bus.py                 # 事件总线 (内存/RabbitMQ)
-│   ├── workflow_executor.py         # 工作流执行器 (DAG/重试/熔断)
-│   ├── monitoring.py                # 监控告警 (指标/告警/报告)
-│   ├── self_healing.py              # 自愈引擎
-│   ├── auth_gateway.py              # 权限认证网关
-│   ├── report_generator.py         # 报告生成器
-│   ├── file_access_layer.py         # 文件访问层
-│   ├── unattended_event_scheduler.py # 22项目无人值守调度
-│   ├── unattended_validator.py     # 24×7运维验证器
-│   ├── astrbot_gateway_adapter.py  # AstrBot网关适配器
-│   └── config.py                    # 配置管理
-├── db/                              # 数据库
-│   ├── __init__.py                 # DatabaseManager
-│   ├── pool.py                     # 连接池
-│   └── migrations/001_initial.sql  # 初始Schema
-├── config/                          # 项目配置
-│   ├── RULE1_communication.md      # 通信规则
-│   ├── RULE2_storage.md            # 存储规则
-│   ├── RULE3_skill_lifecycle.md    # 技能生命周期规则
-│   └── docker-compose.yml          # Docker编排
-├── run.py                           # 一键启动入口
-├── spider_max.bat                   # Windows启动脚本
-├── pyproject.toml                   # 项目元数据+依赖
-├── Makefile                         # Make快捷命令
-└── metadata.json                    # 项目元数据
+spider_max/                          ← 项目目录
+├── spider_max/                      ← Python 主包（安装为 spider-max）
+│   ├── api/                         ← FastAPI 路由层
+│   │   ├── server.py               # 主入口，端口8041
+│   │   ├── health.py               # /health
+│   │   ├── dashboard.py            # /dashboard
+│   │   ├── modules.py              # /modules CRUD
+│   │   ├── permissions.py          # /permissions
+│   │   ├── agents.py               # /agents
+│   │   ├── workflows.py            # /workflows
+│   │   ├── executions.py           # /executions
+│   │   ├── schedules.py            # /schedules
+│   │   └── store.py                # /store 数据查询
+│   ├── cli/                         ← Click CLI
+│   ├── core/                        ← 核心框架
+│   │   ├── registry.py             # 模块注册中心
+│   │   └── plugin_manager.py       # 插件生命周期
+│   ├── agents/                      ← Agent 管理
+│   ├── workflows/                   ← 14个内置工作流
+│   ├── tests/                       ← 67个单元测试
+│   ├── models.py                    ← 数据模型
+│   ├── orchestrator.py              ← 编排调度器（5种模式）
+│   ├── scheduler.py                 ← 调度中心
+│   ├── event_bus.py                 ← 事件总线
+│   ├── workflow_executor.py         ← 工作流执行器
+│   ├── monitoring.py                ← 监控告警
+│   ├── self_healing.py              ← 自愈引擎
+│   ├── unattended_validator.py     ← 验证器
+│   ├── report_generator.py         ← 报告生成
+│   ├── auth_gateway.py              ← 权限认证
+│   ├── file_access_layer.py         ← 文件访问
+│   ├── config.py                    ← 配置
+│   └── main.py                      ← FastAPI v2入口(端口5005)
+├── db/                              ← 数据库
+├── config/                          ← 规则文档 + Docker
+├── run.py                           ← 一键启动入口
+├── spider_max.bat                   ← Windows 双击启动
+├── pyproject.toml                   ← 项目定义
+├── Makefile / Makefile.bat          ← 快捷命令
+└── CHANGELOG.md
 ```
 
 ---
 
-## 快速开始
-
-### 1. 启动API服务
+## Make / Makefile.bat 快捷命令
 
 ```bash
-# 方式一：Python直接启动
-python run.py
-
-# 方式二：Windows双击
-spider_max.bat
-
-# 方式三：调用CLI命令
-spider serve --port 8041
-```
-
-服务启动后自动打开 `http://localhost:8041/docs` (Swagger文档)
-
-### 2. 使用CLI命令
-
-```bash
-spider version          # 查看版本信息
-spider serve            # 启动API服务 (默认端口8041)
-spider db_init          # 初始化数据库
-spider list_modules     # 列出所有注册的44个服务模块
-spider module <name> info     # 查看某模块详情
-spider module <name> call --method=<func>  # 调用某模块函数
-spider sync             # 执行全量数据同步
-spider dashboard        # 命令行仪表板
-```
-
-### 3. API接口速查
-
-启动服务后访问：
-
-| 地址 | 用途 |
-|---|---|
-| `http://localhost:8041/` | 服务信息 |
-| `http://localhost:8041/docs` | Swagger交互式API文档 |
-| `GET /api/v1/health` | 健康检查 |
-| `GET /api/v1/dashboard` | 仪表板概览 |
-| `GET /api/v1/modules` | 注册模块列表 |
-| `GET /api/v1/modules/{name}` | 模块详情 |
-| `POST /api/v1/modules/{name}/load` | 加载模块 |
-| `GET /api/v1/workflows` | 工作流列表 |
-| `POST /api/v1/workflows` | 创建工作流 |
-| `POST /api/v1/workflows/{id}/execute` | 执行工作流 |
-| `GET /api/v1/executions/{id}` | 查看执行记录 |
-| `GET /api/v1/schedules` | 定时任务列表 |
-| `POST /api/v1/permissions/check` | 权限检查 |
-
----
-
-## 14个内置工作流
-
-| 工作流 | 触发方式 | 说明 |
-|---|---|---|
-| **wf_daily_ops** | Cron(每日) | 每日运维：检查系统/磁盘/内存/进程/项目，生成报告 |
-| **wf_001_data_sync** | Cron/Interval | 全量数据同步 |
-| **wf_002_task_tracking** | Cron | 任务进度跟踪 |
-| **wf_003_overdue_alert** | Cron | 逾期任务告警 |
-| **wf_004_cicd** | Event | CI/CD流水线 |
-| **wf_005_compliance** | Cron(每日) | 合规审计 |
-| **wf_006_backup** | Cron(每日) | 数据备份 |
-| **wf_007_git_sync** | Cron | Git仓库同步 |
-| **wf_008_log_analysis** | Cron | 日志分析 |
-| **wf_009_lifecycle_scan** | Cron(每日) | 项目生命周期扫描 |
-| **wf_010_okr_report** | Cron(每日) | OKR进度报告 |
-| **wf_011_doc_slice** | Cron | 文档切片 |
-| **wf_012_ctx_track** | Event | 上下文跟踪 |
-| **wf_013_agent_collect** | Cron | Agent信息采集 |
-| **wf_014_doc_archive** | Cron(每日) | 文档归档 |
-
----
-
-## 22个无人值守项目
-
-系统预置22个项目的全自动调度，分三层：
-
-- **指挥控制层** (P001-P006) — 6个项目，目标效率90%
-- **执行协作层** (P007-P010) — 4个项目，目标完成率85%
-- **资源与环境层** (P011-P022) — 12个项目，目标可用性99%
-
----
-
-## Docker部署
-
-```bash
-cd config
-docker-compose -f docker-compose.unattended.yml up -d
-```
-
----
-
-## 常用Make命令
-
-```bash
-make dev          # 开发模式启动
-make test         # 运行测试
-make lint         # 代码检查
-make check        # 架构验证
-make clean        # 清理临时文件
-make info         # 项目信息
-```
-
----
-
-## 测试
-
-```bash
-# 运行全部测试
-pytest spider_max/tests/ -v
-
-# 运行特定测试
-pytest spider_max/tests/test_event_bus.py -v
-pytest spider_max/tests/test_scheduler.py -v
+# 开发模式
+make validate          # 架构验证（输出健康分数）
+make test              # 运行测试
+make daily-ops         # 手动执行一次每日运维
 ```
 
 ---
 
 ## 技术栈
 
-- **语言**: Python 3.11+
-- **Web框架**: FastAPI + Uvicorn
-- **消息队列**: RabbitMQ (pika/aio-pika)
-- **定时调度**: croniter + APScheduler
-- **终端UI**: Rich + Click
-- **数据库**: SQLite (可切换PostgreSQL via SQLAlchemy)
-- **监控**: Prometheus Client
-- **部署**: Docker + docker-compose
+- Python 3.11+ / FastAPI / Uvicorn
+- RabbitMQ (pika/aio-pika) / SQLite + SQLAlchemy
+- croniter / Click / Rich / Prometheus Client
+- Docker + docker-compose
 
 ---
 
