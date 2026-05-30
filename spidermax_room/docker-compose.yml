@@ -1,0 +1,45 @@
+# ============================================================
+# MAX ROOM v2.0.0 — Docker Compose
+# ============================================================
+version: "3.8"
+
+services:
+  # ─── MAX ROOM ────────────────────────────────────────────
+  max-room:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: spidermax-room:2.0.0
+    container_name: max-room
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - max-room-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "from spidermax_room import RoomEngine; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  # ─── 测试（一次性运行）──────────────────────────────────
+  max-room-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    image: spidermax-room:test
+    container_name: max-room-test
+    profiles:
+      - test
+
+volumes:
+  max-room-logs:
+    driver: local
