@@ -18,6 +18,109 @@ from spider_meta.modules.experience_manager import ExperienceManager
 from spider_meta.services.llm_service import LLMService
 from spider_meta.monitoring.metrics import metrics
 from spider_meta.cost_guard import budget_mgr
+from spider_meta.agents import router, get_local_agent, get_cloud_agent
+
+# ============================================================
+# Agent Router — 多智能体调度 API
+# ============================================================
+
+class RouterRouteRequest(BaseModel):
+    task: str
+    preferred_role: str = ""
+    force_tier: str = ""       # "local" / "cloud" / ""
+
+
+class RouterExecuteRequest(BaseModel):
+    task: str
+    preferred_role: str = ""
+    force_tier: str = ""
+
+
+class AgentExecuteRequest(BaseModel):
+    task: str
+    role: str
+    tier: str = "auto"         # "local" / "cloud" / "auto"
+
+
+@app.post("/router/route")
+async def router_route(req: RouterRouteRequest):
+    """路由决策：根据任务内容返回最优 Agent 分配"""
+    result = router.route(
+        task=req.task,
+        preferred_role=req.preferred_role or None,
+        force_tier=req.force_tier or None,
+    )
+    result["task"] = req.task
+    return result
+
+
+@app.post("/router/execute")
+async def router_execute(req: RouterExecuteRequest):
+    """一键路由 + 执行"""
+    # 路由
+    decision = router.route(
+        task=req.task,
+        preferred_role=req.preferred_role or None,
+        force_tier=req.force_tier or None,
+    )
+
+    tier = decision["tier"]
+    role = decision["role"]
+
+    # 执行
+    if tier == "local":
+        agent = get_local_agent(role)
+        exec_result = await agent.execute(req.task)
+    else:
+        agent = get_cloud_agent(role)
+        exec_result = await agent.execute(req.task)
+
+    return {
+        "routing": decision,
+        "execution": exec_result,
+    }
+
+
+@app.post("/agents/execute")
+async def agent_execute(req: AgentExecuteRequest):
+    """直接执行指定角色"""
+    if req.tier == "local":
+        agent = get_local_agent(req.role)
+    elif req.tier == "cloud":
+        agent = get_cloud_agent(req.role)
+    else:
+        # auto → 路由决策
+        decision = router.route(req.task, preferred_role=req.role)
+        if decision["tier"] == "local":
+            agent = get_local_agent(decision["role"])
+        else:
+            agent = get_cloud_agent(decision["role"])
+
+    result = await agent.execute(req.task)
+    return result
+
+
+@app.get("/router/status")
+async def router_status():
+    """Router 状态报告"""
+    return router.report()
+
+
+@app.get("/agents/roles")
+async def list_agent_roles():
+    """列出所有可用的 Agent 角色"""
+    return {
+        "roles": {
+            name: {
+                "tier": r.tier.value,
+                "model": r.model,
+                "skills": r.skills,
+                "cost_per_million": r.cost_per_million,
+                "fallback": r.fallback_role,
+            }
+            for name, r in router.roles.items()
+        }
+    }
 
 # ---- 预算 & Token 成本 API ----
 

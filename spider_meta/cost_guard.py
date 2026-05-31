@@ -46,10 +46,18 @@ PRICING: Dict[str, float] = {
     "claude-3-haiku":       0.02,
     "claude-3-sonnet":      0.23,
     "claude-3-opus":        1.12,
-    "llama-3-8b":           0.00,   # 本地推理
-    "llama-3-70b":          0.00,   # 本地推理
-    "ollama/llama3":        0.00,   # 本地推理
-    # 模拟模式
+    # DeepSeek
+    "deepseek-chat":        0.14,
+    "deepseek-reasoner":    0.55,
+    # 本地推理（零成本）
+    "qwen2.5:7b":           0.00,
+    "qwen2.5-coder:7b":     0.00,
+    "llama-3-8b":           0.00,
+    "llama-3-70b":          0.00,
+    "ollama/llama3":        0.00,
+    "ollama/qwen2.5":      0.00,
+    "ollama/qwen2.5-coder": 0.00,
+    # 本地模拟（零成本）
     "simulation":           0.00,
     "_simulate_llm()":      0.00,
 }

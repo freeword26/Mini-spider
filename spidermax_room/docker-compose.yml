@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  # ─── MAX ROOM WebSocket Server ──────────────────────────
+  max-room-ws:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: spidermax-room:2.1.0
+    container_name: max-room-ws
+    ports:
+      - "8765:8765"
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: ["python", "-m", "spidermax_room.server"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "from spidermax_room import RoomSocketServer; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    restart: unless-stopped
+
+  # ─── 测试（一次性运行）──────────────────────────────────
+  max-room-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    image: spidermax-room:test
+    container_name: max-room-test
+    profiles:
+      - test
