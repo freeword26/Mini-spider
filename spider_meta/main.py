@@ -769,3 +769,88 @@ def reagent_strategy(ctx: AgentContext) -> str:
     if "http_get" in actions:
         return "api_integration"
     return "analysis"
+
+
+# ============================================================
+# Agent Manager — 多智能体并行任务 API
+# ============================================================
+
+class ParallelTaskRequest(BaseModel):
+    tasks: Dict[str, str] = Field(
+        default_factory=dict,
+        description="子任务列表 {任务名: 任务描述}"
+    )
+    max_parallel: int = Field(default=4, ge=1, le=10)
+
+
+class ParallelTaskResponse(BaseModel):
+    total: int = 0
+    completed: int = 0
+    failed: int = 0
+    results: Dict[str, dict] = Field(default_factory=dict)
+
+
+@app.post("/manager/parallel", response_model=ParallelTaskResponse)
+async def manager_parallel(req: ParallelTaskRequest):
+    """
+    多智能体并行执行子任务
+    
+    示例:
+      POST /manager/parallel
+      {
+        "tasks": {
+          "budget_check": "检测预算阈值配置",
+          "offload_switch": "验证差分卸载开关",
+          "routing": "测试路由决策",
+          "circuit_breaker": "模拟网络故障降级",
+          "bandwidth": "带宽优化对比",
+          "lite_proxy": "LiteCapabilityProxy 性能",
+          "resource_monitor": "CPU/GPU/内存资源监控",
+          "security": "安全加固项检测",
+          "performance": "性能基准测试"
+        },
+        "max_parallel": 4
+      }
+    """
+    if not req.tasks:
+        raise HTTPException(400, "tasks 不能为空")
+
+    results = await agent_manager.execute_parallel(req.tasks)
+
+    response = ParallelTaskResponse(
+        total=len(results),
+        completed=sum(1 for s in results.values() if s.status.value == "done"),
+        failed=sum(1 for s in results.values() if s.status.value == "failed"),
+        results={
+            name: {
+                "role": st.assigned_role,
+                "tier": st.assigned_tier,
+                "status": st.status.value,
+                "duration_ms": round(st.duration_ms, 2),
+                "error": st.error,
+            }
+            for name, st in results.items()
+        },
+    )
+    return response
+
+
+@app.get("/manager/status")
+async def manager_status():
+    """Agent Manager 状态"""
+    return agent_manager._tasks
+
+
+@app.get("/protocol/delta-sync/stats")
+async def delta_sync_stats():
+    """DeltaSync 带宽优化统计"""
+    return delta_sync.get_stats()
+
+
+@app.get("/protocol/lite-proxy/skills")
+async def lite_proxy_skills():
+    """LiteCapabilityProxy 技能列表"""
+    return {
+        "local_skills": lite_proxy.local_skill_names,
+        "cloud_skills": lite_proxy.cloud_skill_names,
+    }

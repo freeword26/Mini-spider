@@ -23,10 +23,14 @@ from spider_meta.agents.agent_router import (
 )
 from spider_meta.agents.local import LocalAgent, get_local_agent
 from spider_meta.agents.cloud import CloudAgent, get_cloud_agent
+from spider_meta.agents.agent_manager import agent_manager, AgentManager, SubTask, TaskStatus
+from spider_meta.agents.protocol import delta_sync, lite_proxy, DeltaSyncProtocol, LiteCapabilityProxy
 
 __all__ = [
     "router", "AgentRouter", "AgentRole", "AgentTier",
     "AGENT_ROLES", "AgentMessage", "MessageType",
     "LocalAgent", "get_local_agent",
-    "CloudAgent", "get_cloud_cloud",
+    "CloudAgent", "get_cloud_agent",
+    "agent_manager", "AgentManager", "SubTask", "TaskStatus",
+    "delta_sync", "lite_proxy", "DeltaSyncProtocol", "LiteCapabilityProxy",
 ]
