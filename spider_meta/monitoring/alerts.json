@@ -1,0 +1,39 @@
+{
+  "alerts": [
+    {
+      "name": "high_retrieval_latency",
+      "condition": "avg_latency_ms > 500",
+      "severity": "warning",
+      "message": "知识检索平均延迟超过500ms",
+      "module": "knowledge_retriever"
+    },
+    {
+      "name": "high_error_rate",
+      "condition": "errors > 10",
+      "severity": "critical",
+      "message": "错误次数超过阈值",
+      "module": "*"
+    },
+    {
+      "name": "low_cache_hit_rate",
+      "condition": "cache_hit_rate < 0.1",
+      "severity": "info",
+      "message": "缓存命中率低于10%",
+      "module": "knowledge_retriever"
+    },
+    {
+      "name": "high_empty_result_rate",
+      "condition": "empty_result_rate > 0.5",
+      "severity": "warning",
+      "message": "空结果率超过50%",
+      "module": "knowledge_retriever"
+    },
+    {
+      "name": "worker_heartbeat_timeout",
+      "condition": "heartbeat_age > 10",
+      "severity": "critical",
+      "message": "Worker心跳超时",
+      "module": "worker_dispatcher"
+    }
+  ]
+}

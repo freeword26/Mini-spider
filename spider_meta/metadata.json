@@ -1,0 +1,120 @@
+{
+  "project_id": "PRJ_SPIDER_META_001",
+  "project_name": "spider_meta",
+  "tags": {
+    "project_type": "spider-extension",
+    "domain": ["agent-system", "monitoring"],
+    "layer": "control",
+    "status": "开发中",
+    "priority": "P1",
+    "risk_level": "risk-medium",
+    "zone": "zone-buffer",
+    "executor_type": "hybrid",
+    "spider_family": "meta"
+  },
+  "spider_info": {
+    "family": "meta",
+    "role": "Spider生态元智能体编排框架",
+    "version": "0.5.0",
+    "upstream": "无（元层，生态最顶层）",
+    "downstream": [
+      {
+        "project": "mini_spider",
+        "role": "轻量爬虫节点",
+        "register_as": "worker",
+        "endpoint": "POST /workers/register",
+        "capabilities": ["crawl", "fetch", "parse"]
+      },
+      {
+        "project": "spider_max",
+        "role": "高性能爬虫引擎",
+        "register_as": "worker",
+        "endpoint": "POST /workers/register",
+        "capabilities": ["distributed_crawl", "anti_crawl", "js_render"]
+      },
+      {
+        "project": "spider_diary",
+        "role": "爬取日志与经验存储",
+        "register_as": "pipeline_tool",
+        "endpoint": "tools.register(name, func, ...)",
+        "capabilities": ["log_storage", "experience_query", "task_history"]
+      },
+      {
+        "project": "Spider-X",
+        "role": "扩展适配层",
+        "register_as": "skill_plugin",
+        "endpoint": "@register_skill 装饰器",
+        "capabilities": ["protocol_adapt", "third_party_api", "custom_skill"]
+      },
+      {
+        "project": "spidermax_room",
+        "role": "虚拟协作空间",
+        "register_as": "skill_plugin",
+        "endpoint": "@register_skill 装饰器",
+        "capabilities": ["multi_agent_collaboration", "room_management", "task_coordination"]
+      }
+    ]
+  },
+  "registration": {
+    "description": "spider_meta 提供三种注册方式，适应不同集成深度",
+    "methods": [
+      {
+        "type": "worker",
+        "description": "注册可执行任务的 Worker 节点（爬虫、处理器等）",
+        "endpoint": "POST http://{meta_host}:8003/workers/register",
+        "request_body": {
+          "worker_id": "string (唯一标识)",
+          "skills": ["string (能力标签)"],
+          "endpoint": "string (Worker API地址)"
+        },
+        "example": "curl -X POST http://localhost:8003/workers/register -H 'Content-Type: application/json' -d '{\"worker_id\":\"spider-max-01\",\"skills\":[\"crawl\",\"js_render\"],\"endpoint\":\"http://spider-max:8005\"}'",
+        "used_by": ["mini_spider", "spider_max"]
+      },
+      {
+        "type": "tool",
+        "description": "注册功能性工具（知识检索、存储、外部API等）",
+        "code": "from spider_meta.main import tools\ntools.register(name, func, description, parameters)",
+        "example": "tools.register('kg_search', search_func, '知识图谱检索', {'query': 'string'})",
+        "used_by": ["spider_diary", "知识图谱", "第三方API"]
+      },
+      {
+        "type": "skill_plugin",
+        "description": "注册复杂技能插件（有生命周期管理、参数验证）",
+        "code": "@register_skill\nclass MySkill(SkillPlugin):\n    name = 'my_skill'\n    async def execute(self, task): ...",
+        "used_by": ["Spider-X", "spidermax_room", "自定义扩展"]
+      },
+      {
+        "type": "event_subscription",
+        "description": "订阅系统事件，实现事件驱动的自动化流水线",
+        "code": "from spider_meta.core.event_bus import event_bus\nevent_bus.subscribe([EventType.TASK_SUBMITTED], handler_func)",
+        "example": "订阅 TASK_COMPLETED 事件触发下一个任务",
+        "used_by": ["所有需要响应系统状态变化的项目"]
+      }
+    ]
+  },
+  "progress": {
+    "progress_pct": 80,
+    "milestone_current": "生态注册联调",
+    "milestone_total": 5,
+    "milestone_done": 4,
+    "health_score": 80.0,
+    "blocked_count": 0,
+    "days_remaining": 7,
+    "milestones": [
+      {"name": "核心框架", "date": "2026-05-20", "status": "done"},
+      {"name": "元数据管理", "date": "2026-05-24", "status": "done"},
+      {"name": "插件系统", "date": "2026-05-27", "status": "done"},
+      {"name": "生态注册机制", "date": "2026-05-30", "status": "done"},
+      {"name": "上线发布", "date": null, "status": "backlog"}
+    ]
+  },
+  "metadata": {
+    "version": "0.5.0",
+    "created_at": "2026-05-20T00:00:00+08:00",
+    "updated_at": "2026-05-30T00:00:00+08:00",
+    "owner": "系统经理",
+    "status": "开发中",
+    "description": "spider_meta — Spider生态元智能体编排框架，管理调度所有子项目"
+  },
+  "dependencies": []
+}

@@ -1,0 +1,119 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "spider-meta"
+version = "0.1.0"
+description = "A meta spider framework for intelligent task decomposition, knowledge retrieval, and workflow orchestration."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "TRAE Systems", email = "dev@trae.ai"},
+]
+keywords = [
+    "multi-agent",
+    "llm",
+    "workflow",
+    "orchestration",
+    "dag",
+    "knowledge",
+    "retrieval",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # Core
+    "pyyaml>=6.0.0",
+    "python-dotenv>=1.0.0",
+    # HTTP
+    "httpx>=0.24.0",
+    # Pydantic
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+knowledge = [
+    "redis>=5.0.0",
+    "numpy>=1.24.0",
+    "sentence-transformers>=2.0.0",
+]
+all = [
+    "spider-meta[knowledge]",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "openai>=1.0.0",
+]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.0.0",
+    "black>=24.0.0",
+]
+
+[project.scripts]
+spider-meta = "spider_meta.main:main"
+
+[project.urls]
+Homepage = "https://github.com/trae-systems/spider-meta"
+Documentation = "https://github.com/trae-systems/spider-meta#readme"
+Repository = "https://github.com/trae-systems/spider-meta.git"
+Issues = "https://github.com/trae-systems/spider-meta/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["spider_meta"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/spider_meta",
+    "/tests",
+    "/docs",
+    "README.md",
+    "LICENSE",
+]
+
+# ── Ruff ──────────────────────────────────────────────
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+exclude = ["__pycache__", ".venv", "dist", "build"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+# ── pytest ─────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+# ── mypy ───────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+exclude = ["__pycache__", ".venv"]
+
+# ── coverage ───────────────────────────────────────────
+[tool.coverage.run]
+source = ["spider_meta"]
+omit = ["tests/*", "docs/*"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80

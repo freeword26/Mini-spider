@@ -1,0 +1,99 @@
+# ============================================================
+# spider_meta Docker Compose 部署配置（硬件保护版）
+# ============================================================
+# 启动（从项目根目录 E:\软件开发 运行）:
+#   docker compose -p spider_meta -f docker-compose.spider-meta.yml up -d
+# 停止:
+#   docker compose -p spider_meta -f docker-compose.spider-meta.yml down
+#
+# 硬件硬限制（立项协议）：
+#   GPU_MEMORY_LIMIT=3500M  CPU_CORE_LIMIT=3.0
+#   RAM_LIMIT=16G           DISK_ALERT=85%
+# ============================================================
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: spider_meta/Dockerfile
+    container_name: spider_meta-api
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    environment:
+      # Redis 连接
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # LLM 配置
+      - LLM_API_URL=${LLM_API_URL:-}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
+      # ---- 硬件资源硬限制（立项协议） ----
+      - GPU_MEMORY_LIMIT_MB=3500       # GPU 显存硬限制 3.5GB
+      - CPU_CORE_LIMIT=3.0             # CPU 核数硬限制 3核
+      - RAM_LIMIT_MB=16384             # RAM 硬限制 16GB
+      - DISK_ALERT_PCT=85              # 磁盘告警阈值 85%
+      - MONTHLY_BUDGET_RMB=50          # 月成本上限 ¥50
+      - SPIDER_META_DATA=/app/data
+      # 时区
+      - TZ=Asia/Shanghai
+    volumes:
+      - spider_data:/app/data
+      - spider_logs:/app/logs
+    # ---- Docker 资源硬限制 ----
+    deploy:
+      resources:
+        limits:
+          cpus: "3.0"                   # CPU 硬限制 3核
+          memory: 16G                   # RAM 硬限制 16GB
+        reservations:
+          cpus: "1.0"                   # 最低保障 1核
+          memory: 512M                  # 最低保障 512MB
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - spider-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  redis:
+    image: redis:7-alpine
+    container_name: spider_meta-redis
+    restart: unless-stopped
+    expose:
+      - "6379"
+    # ---- Redis 资源限制 ----
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - spider-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  spider-net:
+    driver: bridge
+
+volumes:
+  spider_data:
+  spider_logs:
+  redis_data:

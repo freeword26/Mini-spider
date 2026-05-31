@@ -1,0 +1,24 @@
+"""GitHub Actions CI/CD pipeline for spider_meta."""
+name: spider_meta CI
+on:
+  push:
+    branches: [master, develop]
+    paths: ["spider_meta/**"]
+  pull_request:
+    branches: [master, develop]
+    paths: ["spider_meta/**"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e "spider_meta[dev,all]"
+      - run: ruff check spider_meta/
+      - run: mypy spider_meta/ --ignore-missing-imports
+      - run: pytest spider_meta/tests/ -v --cov=spider_meta --cov-report=xml
